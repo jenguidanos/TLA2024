@@ -10,7 +10,7 @@ class TLA2024 {
 
   int analogRead();
 
-  void write(uint16_t data);
+  int write(uint16_t data);
 
   void end();
 
@@ -19,7 +19,7 @@ class TLA2024 {
   uint8_t conv_reg = 0x00;
   uint8_t conf_reg = 0x01;
   // this is default conf.
-  uint16_t init_conf = 0x02C3;
+  uint16_t init_conf = 0x8583;
 
   union I2C_data {
     uint8_t packet[2];
@@ -31,10 +31,11 @@ TLA2024::TLA2024() {}
 
 int TLA2024::begin() {
   Wire.begin();
-  if (read(conf_reg) == init_conf) {
+  uint16_t init = read(conf_reg);
+  if (init == init_conf) {
     return 0;
   } else {
-    return -1;
+    return 1;
   }
 }
 
@@ -42,6 +43,7 @@ uint16_t TLA2024::read(uint8_t mem_addr) {
   Wire.beginTransmission(addr);
   Wire.write(mem_addr);
   Wire.endTransmission();
+  delay(20);
   Wire.requestFrom(addr, 2);
   if (2 <= Wire.available()) {
     // bring in data
@@ -56,13 +58,16 @@ uint16_t TLA2024::read(uint8_t mem_addr) {
 int TLA2024::analogRead() {
   // write 1 to OS bit to start conv
   uint16_t current_conf = read(conf_reg);
-  current_conf |= 1 << 15;
-
+  current_conf |= 0x8000;
+  write(current_conf);
+  delay(10);
+  Serial.println(read(conf_reg), BIN);
   // OS bit will be 0 until conv is done.
-  while (read(conf_reg) & 0x8000 == 0) {
-    delay(20);
-  }
-
+  do {
+    // Serial.println("waiting for conv");
+    // delay(20);
+  } while ((read(conf_reg) & 0x8000) == 0);
+  // Serial.println("done");
   // get data from conv_reg
   Wire.beginTransmission(addr);
   Wire.write(conv_reg);
@@ -86,9 +91,13 @@ int TLA2024::analogRead() {
   return -1;
 }
 
-void TLA2024::write(uint16_t data) {
+int TLA2024::write(uint16_t out_data) {
+  int written = 0;
+  data.value = out_data;
   Wire.beginTransmission(addr);
   Wire.write(conf_reg);
-  Wire.write(data);
+  written += Wire.write(data.packet[1]);
+  written += Wire.write(data.packet[0]);
   Wire.endTransmission();
+  return written;
 }
