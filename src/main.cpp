@@ -17,6 +17,6 @@ void setup() {
 
 void loop() {
   int val = adc.analogRead();
-  // Serial.println(val);
+  Serial.println(val);
   delay(100);
 }

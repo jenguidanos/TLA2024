@@ -55,13 +55,24 @@ uint16_t TLA2024::read(uint8_t mem_addr) {
   return -1;
 }
 
+int TLA2024::write(uint16_t out_data) {
+  int written = 0;
+  data.value = out_data;
+  Wire.beginTransmission(addr);
+  Wire.write(conf_reg);
+  written += Wire.write(data.packet[1]);
+  written += Wire.write(data.packet[0]);
+  Wire.endTransmission();
+  return written;
+}
+
 int TLA2024::analogRead() {
   // write 1 to OS bit to start conv
   uint16_t current_conf = read(conf_reg);
   current_conf |= 0x8000;
   write(current_conf);
   delay(10);
-  Serial.println(read(conf_reg), BIN);
+  // Serial.println(read(conf_reg), BIN);
   // OS bit will be 0 until conv is done.
   do {
     // Serial.println("waiting for conv");
@@ -89,15 +100,4 @@ int TLA2024::analogRead() {
     return (int)ret;
   }
   return -1;
-}
-
-int TLA2024::write(uint16_t out_data) {
-  int written = 0;
-  data.value = out_data;
-  Wire.beginTransmission(addr);
-  Wire.write(conf_reg);
-  written += Wire.write(data.packet[1]);
-  written += Wire.write(data.packet[0]);
-  Wire.endTransmission();
-  return written;
 }
