@@ -5,11 +5,17 @@
 TLA2024 adc = TLA2024();
 
 void setup() {
-  adc.begin();
   Serial.begin(115200);
+  if (!adc.begin()) {
+    Serial.println("ADC Init Error");
+    while (true) {
+    }
+  } else {
+    Serial.println("ADC Init OK");
+  }
 }
 
 void loop() {
-  Serial.println(adc.read());
+  Serial.println(adc.analogRead());
   delay(100);
 }
