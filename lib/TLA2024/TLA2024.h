@@ -8,7 +8,7 @@ class TLA2024 {
 
   uint16_t read(uint8_t mem_addr);
 
-  int analogRead();
+  float analogRead();
 
   int write(uint16_t data);
 
@@ -43,7 +43,7 @@ uint16_t TLA2024::read(uint8_t mem_addr) {
   Wire.beginTransmission(addr);
   Wire.write(mem_addr);
   Wire.endTransmission();
-  delay(20);
+  delay(10);
   Wire.requestFrom(addr, 2);
   if (2 <= Wire.available()) {
     // bring in data
@@ -66,19 +66,17 @@ int TLA2024::write(uint16_t out_data) {
   return written;
 }
 
-int TLA2024::analogRead() {
+float TLA2024::analogRead() {
   // write 1 to OS bit to start conv
   uint16_t current_conf = read(conf_reg);
   current_conf |= 0x8000;
   write(current_conf);
   delay(10);
-  // Serial.println(read(conf_reg), BIN);
   // OS bit will be 0 until conv is done.
   do {
     // Serial.println("waiting for conv");
-    // delay(20);
+    delay(10);
   } while ((read(conf_reg) & 0x8000) == 0);
-  // Serial.println("done");
   // get data from conv_reg
   Wire.beginTransmission(addr);
   Wire.write(conv_reg);
@@ -89,7 +87,9 @@ int TLA2024::analogRead() {
     data.packet[1] = Wire.read();
     data.packet[0] = Wire.read();
     // shiftout unused data
+    Serial.println(data.value, HEX);
     data.value >>= 4;
+    // Serial.println(data.value, HEX);
     // get sign and mask accordingly
     if (data.value & (1 << 11)) {
       data.value |= 0xF000;
@@ -97,7 +97,10 @@ int TLA2024::analogRead() {
       data.value &= ~0xF000;
     }
     int16_t ret = data.value;
-    return (int)ret;
+
+    // default Full Scale Range is -2.048V to 2.047V.
+    // our 12bit 2's complement goes from -2048 to 2047 :)
+    return ret / 1000.0;
   }
   return -1;
 }
