@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <Wire.h>
 #pragma once
 class TLA2024 {
@@ -33,6 +34,11 @@ int TLA2024::begin() {
   Wire.begin();
   uint16_t init = read(conf_reg);
   if (init == init_conf) {
+    // init |= 0x200;
+    // init &= ~0x400;
+    init |= 0b100 << 12;
+    write(init);
+    Serial.println(read(conf_reg));
     return 0;
   } else {
     return 1;
@@ -87,7 +93,7 @@ float TLA2024::analogRead() {
     data.packet[1] = Wire.read();
     data.packet[0] = Wire.read();
     // shiftout unused data
-    Serial.println(data.value, HEX);
+    // Serial.println(data.value, HEX);
     data.value >>= 4;
     // Serial.println(data.value, HEX);
     // get sign and mask accordingly
