@@ -13,8 +13,6 @@ void setup() {
   } else {
     Serial.println("ADC Init OK");
   }
-
-  Serial.println((adc.read(0x01) & 0x0E00) >> 9, BIN);
 }
 
 void loop() {

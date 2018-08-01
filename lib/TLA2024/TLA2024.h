@@ -7,13 +7,7 @@ class TLA2024 {
 
   int begin();
 
-  uint16_t read(uint8_t mem_addr);
-
   float analogRead();
-
-  int write(uint16_t data);
-
-  void end();
 
  private:
   uint8_t addr = 0x48;
@@ -26,6 +20,8 @@ class TLA2024 {
     uint8_t packet[2];
     uint16_t value;
   } data;
+  uint16_t read(uint8_t mem_addr);
+  int write(uint16_t data);
 };
 
 TLA2024::TLA2024() {}
@@ -34,11 +30,8 @@ int TLA2024::begin() {
   Wire.begin();
   uint16_t init = read(conf_reg);
   if (init == init_conf) {
-    // init |= 0x200;
-    // init &= ~0x400;
     init |= 0b100 << 12;
     write(init);
-    Serial.println(read(conf_reg));
     return 0;
   } else {
     return 1;
