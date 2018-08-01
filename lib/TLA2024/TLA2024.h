@@ -29,7 +29,9 @@ TLA2024::TLA2024() {}
 int TLA2024::begin() {
   Wire.begin();
   uint16_t init = read(conf_reg);
+  // make sure communication with device is working and that it is OK
   if (init == init_conf) {
+    // make adc measure between AIN0 and GND
     init |= 0b100 << 12;
     write(init);
     return 0;
@@ -38,6 +40,9 @@ int TLA2024::begin() {
   }
 }
 
+/*
+  A generic read from mem_addr.
+*/
 uint16_t TLA2024::read(uint8_t mem_addr) {
   Wire.beginTransmission(addr);
   Wire.write(mem_addr);
@@ -54,8 +59,15 @@ uint16_t TLA2024::read(uint8_t mem_addr) {
   return -1;
 }
 
+/*
+  We only write to the configuration register.
+  out_data is the 16 bits of conf_regs
+
+  Should always return 2
+*/
 int TLA2024::write(uint16_t out_data) {
   int written = 0;
+  // put our out_data into the I2C data union so we can send MSB and LSB
   data.value = out_data;
   Wire.beginTransmission(addr);
   Wire.write(conf_reg);
@@ -73,33 +85,28 @@ float TLA2024::analogRead() {
   delay(10);
   // OS bit will be 0 until conv is done.
   do {
-    // Serial.println("waiting for conv");
     delay(10);
   } while ((read(conf_reg) & 0x8000) == 0);
-  // get data from conv_reg
-  Wire.beginTransmission(addr);
-  Wire.write(conv_reg);
-  Wire.endTransmission();
-  Wire.requestFrom(addr, 2);
-  if (2 <= Wire.available()) {
-    // bring in data
-    data.packet[1] = Wire.read();
-    data.packet[0] = Wire.read();
-    // shiftout unused data
-    // Serial.println(data.value, HEX);
-    data.value >>= 4;
-    // Serial.println(data.value, HEX);
-    // get sign and mask accordingly
-    if (data.value & (1 << 11)) {
-      data.value |= 0xF000;
-    } else {
-      data.value &= ~0xF000;
-    }
-    int16_t ret = data.value;
 
-    // default Full Scale Range is -2.048V to 2.047V.
-    // our 12bit 2's complement goes from -2048 to 2047 :)
-    return ret / 1000.0;
+  // get data from conv_reg
+  uint16_t in_data = read(conv_reg);
+
+  // shift out unused bits
+  in_data >>= 4;
+
+  // get sign and mask accordingly
+  if (in_data & (1 << 11)) {
+    // 11th bit is sign bit. if its set, set bits 15-12
+    in_data |= 0xF000;
+  } else {
+    // not set, clear bits 15-12
+    in_data &= ~0xF000;
   }
-  return -1;
+
+  // now store it as a signed 16 bit int.
+  int16_t ret = in_data;
+
+  // default Full Scale Range is -2.048V to 2.047V.
+  // our 12bit 2's complement goes from -2048 to 2047 :)
+  return in_data / 1000.0;
 }
