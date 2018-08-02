@@ -82,10 +82,9 @@ float TLA2024::analogRead() {
   uint16_t current_conf = read(conf_reg);
   current_conf |= 0x8000;
   write(current_conf);
-  delay(10);
   // OS bit will be 0 until conv is done.
   do {
-    delay(10);
+    delay(5);
   } while ((read(conf_reg) & 0x8000) == 0);
 
   // get data from conv_reg

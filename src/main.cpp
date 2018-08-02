@@ -18,5 +18,5 @@ void setup() {
 void loop() {
   float val = adc.analogRead();
   Serial.println(val);
-  delay(100);
+  delay(10);
 }
