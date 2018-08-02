@@ -12,6 +12,7 @@ void setup() {
     }
   } else {
     Serial.println("ADC Init OK");
+    adc.setFSR(5);
   }
 }
 
