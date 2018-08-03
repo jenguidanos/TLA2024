@@ -131,27 +131,37 @@ void TLA2024::setFSR(uint8_t gain) {
   // bring in conf reg
   uint16_t conf = read(conf_reg);
   // clear the FSR bits:
-  conf &= ~0xE00;
+  conf &= ~0x0E00;
   switch (gain) {
     case 60:
       // clear FSR bits
-      conf &= ~0xE00;
+      conf &= ~0x0E00;
+      break;
     case 40:
       // set bit 9
-      conf |= 0x200;
+      conf |= 0x0200;
+      break;
     case 20:
       // set bit 10
-      conf |= 0x400;
+      conf |= 0x0400;
+      break;
     case 10:
       // set bit 10-9
-      conf |= 0x600;
+      conf |= 0x0600;
+      break;
     case 5:
       // set bit 11
-      conf |= 0x800;
+      conf |= 0x0800;
+      break;
     case 2:
       // set bit 11-9
-      conf |= 0xE00;
-  }
+      conf |= 0x0E00;
+      break;
 
+      // default:
+      //   conf |= 0x0400;
+      //   break;
+  }
+  Serial.println(conf, HEX);
   write(conf);
 }
