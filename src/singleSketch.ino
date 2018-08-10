@@ -14,12 +14,23 @@ union I2C_data {
 } data;
 
 void setup() {
+  // enable external power
   pinMode(SNSR_POWER, OUTPUT);
   digitalWrite(SNSR_POWER, HIGH);
+  // enable external I2C
   pinMode(nI2C_ENABLE, OUTPUT);
   digitalWrite(nI2C_ENABLE, LOW);
-  delay(20);
+  delay(10);
   Serial.begin(115200);
+  Wire.begin();
+  uint16_t conf = adcRead(conf_reg);
+  // set inputs to ADC (P = 0, N = GND)
+  conf &= ~0x7000;
+  conf |= 0x4000;
+  // set ADC FSR
+  conf &= ~0x0E00;
+  // send new conf
+  adcWrite(conf);
 }
 
 void loop() {}
@@ -89,10 +100,6 @@ float adcAnalogRead() {
 
   // now store it as a signed 16 bit int.
   int16_t ret = in_data;
-
-  // default Full Scale Range is -2.048V to 2.047V.
-  // our 12bit 2's complement goes from -2048 to 2047 :)
-  // return ret /1000.0;
 
   // return raw adc data
   return ret;
