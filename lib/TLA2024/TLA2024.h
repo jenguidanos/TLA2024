@@ -5,7 +5,16 @@ class TLA2024 {
  public:
   TLA2024();
 
+  /*
+    Initializes I2C bus
+    returns:
+       0 - adc responds with correct default conf
+       1 - otherwise
+  */
   int begin();
+
+  // resets device to default configuration
+  void reset();
 
   float analogRead();
 
@@ -19,7 +28,6 @@ class TLA2024 {
       10 -> ± 1.024
       5  -> ± 0.512
       2  -> ± 0.256
-
   */
   void setFSR(uint8_t gain);
 
@@ -37,6 +45,7 @@ class TLA2024 {
   uint8_t addr = 0x48;
   uint8_t conv_reg = 0x00;
   uint8_t conf_reg = 0x01;
+
   // this is default conf.
   uint16_t init_conf = 0x8583;
 
@@ -84,7 +93,7 @@ int TLA2024::begin() {
 uint16_t TLA2024::read(uint8_t mem_addr) {
   Wire.beginTransmission(addr);
   Wire.write(mem_addr);
-  byte error = Wire.endTransmission();
+  Wire.endTransmission();
   // Serial.println("Ended Transmission");
   delay(10);
   Wire.requestFrom(addr, 2);
@@ -109,6 +118,8 @@ int TLA2024::write(uint16_t out_data) {
   Wire.endTransmission();
   return written;
 }
+
+void TLA2024::reset(void) { write(init_conf); }
 
 float TLA2024::analogRead() {
   // write 1 to OS bit to start conv
