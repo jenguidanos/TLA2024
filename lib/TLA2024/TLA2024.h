@@ -38,6 +38,7 @@ class TLA2024 {
       1 -> P = 0, N = 1 (TP1 - TP2)
       2 -> P = 0, N = 3 (TP1 - VGND)
       3 -> P = 1, N = 3 (TP2 - VGND)
+      4 -> P = 0, N = GND
   */
   void setMux(uint8_t option);
 
@@ -79,11 +80,6 @@ int TLA2024::begin() {
   Serial.println("Done Read");
   // make sure communication with device is working and that it is OK
   if ((init == init_conf) || 1) {
-    // make adc measure between AIN0 and GND
-    init |= 0b100 << 12;
-    Serial.println("Writing");
-    write(init);
-    Serial.println("Done");
     return 0;
   } else {
     return 1;
@@ -218,6 +214,10 @@ void TLA2024::setMux(uint8_t option) {
       // set bit 13
       conf |= 0x2000;
       break;
+
+    case 4:
+      // set bit 14
+      conf |= 0x4000;
   }
   write(conf);
 }
