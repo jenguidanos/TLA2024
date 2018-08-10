@@ -33,7 +33,10 @@ void setup() {
   adcWrite(conf);
 }
 
-void loop() {}
+void loop() {
+  Serial.println(adcAnalogRead());
+  delay(20);
+}
 
 /*
   We only write to the configuration register.
