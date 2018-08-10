@@ -1,3 +1,4 @@
+#ifdef SINGLE
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -112,3 +113,4 @@ float adcAnalogRead() {
   // return raw adc data
   return ret;
 }
+#endif  // SINGLE

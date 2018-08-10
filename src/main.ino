@@ -15,18 +15,21 @@ void setup() {
   delay(20);
   Serial.begin(115200);
   Serial.print("Starting");
-  if (adc.begin()) {
-    Serial.println("ADC Init Error");
-    // while (true) {
-    // }
-  } else {
-    Serial.println("ADC Init OK");
-    adc.setFSR(60);
-  }
+  adc.begin();
+  adc.setFSR(60);
+  adc.setMux(4);
+  adc.setDR(1);
+  adc.setMode(false);
 }
 
 void loop() {
+  // digitalWrite(SNSR_POWER, LOW);
+  // delay(80);
+  // digitalWrite(SNSR_POWER, HIGH);
+  // delay(5);
+  // adc.restore();
+  // delay(12);
   float val = adc.analogRead();
   Serial.println(val);
-  delay(10);
+  // delay();
 }

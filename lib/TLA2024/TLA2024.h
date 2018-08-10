@@ -16,6 +16,9 @@ class TLA2024 {
   // resets device to default configuration
   void reset();
 
+  // restores device to last config
+  void restore();
+
   float analogRead();
 
   /*
@@ -42,6 +45,13 @@ class TLA2024 {
   */
   void setMux(uint8_t option);
 
+  /*
+    Continous conversion (0) or single shot (1)
+  */
+  void setMode(bool mode);
+
+  void setDR(uint8_t rate);
+
  private:
   uint8_t addr = 0x48;
   uint8_t conv_reg = 0x00;
@@ -49,6 +59,7 @@ class TLA2024 {
 
   // this is default conf.
   uint16_t init_conf = 0x8583;
+  uint16_t saved_conf = 0x8583;
 
   union I2C_data {
     uint8_t packet[2];
@@ -65,6 +76,8 @@ class TLA2024 {
     out_data is the 16 bits of conf_regs
 
     Should always return 2
+
+    Saves data to current_conf
   */
   int write(uint16_t data);
 };
@@ -91,13 +104,14 @@ uint16_t TLA2024::read(uint8_t mem_addr) {
   Wire.write(mem_addr);
   Wire.endTransmission();
   // Serial.println("Ended Transmission");
-  delay(10);
+  delay(5);
   Wire.requestFrom(addr, 2);
   if (2 <= Wire.available()) {
     // bring in data
     data.packet[1] = Wire.read();
     data.packet[0] = Wire.read();
     uint16_t ret = data.value;
+    data.value = 0;
     return ret;
   }
   return -1;
@@ -105,6 +119,8 @@ uint16_t TLA2024::read(uint8_t mem_addr) {
 
 int TLA2024::write(uint16_t out_data) {
   int written = 0;
+  // save conf
+  saved_conf = out_data;
   // put our out_data into the I2C data union so we can send MSB and LSB
   data.value = out_data;
   Wire.beginTransmission(addr);
@@ -112,10 +128,17 @@ int TLA2024::write(uint16_t out_data) {
   written += Wire.write(data.packet[1]);
   written += Wire.write(data.packet[0]);
   Wire.endTransmission();
+  data.value = 0;
   return written;
 }
 
 void TLA2024::reset(void) { write(init_conf); }
+
+void TLA2024::restore(void) {
+  uint16_t restore_conf = saved_conf & ~0x8000;
+  write(restore_conf);
+  // Serial.println(restore_conf, BIN);
+}
 
 float TLA2024::analogRead() {
   // write 1 to OS bit to start conv
@@ -156,13 +179,12 @@ float TLA2024::analogRead() {
 void TLA2024::setFSR(uint8_t gain) {
   // bring in conf reg
   uint16_t conf = read(conf_reg);
-  // clear the FSR bits:
+  // clear the PGA bits:
   conf &= ~0x0E00;
 
   switch (gain) {
     case 60:
-      // clear FSR bits
-      conf &= ~0x0E00;
+      // PGA bits already cleared
       break;
 
     case 40:
@@ -201,8 +223,7 @@ void TLA2024::setMux(uint8_t option) {
 
   switch (option) {
     case 1:
-      // default, bits 14-12 cleared
-      conf &= ~0x7000;
+      // bits already cleared
       break;
 
     case 2:
@@ -219,5 +240,25 @@ void TLA2024::setMux(uint8_t option) {
       // set bit 14
       conf |= 0x4000;
   }
+  write(conf);
+}
+
+void TLA2024::setMode(bool mode) {
+  // bring in conf reg
+  uint16_t conf = read(conf_reg);
+  // clear MODE bit (8) (continous conv)
+  conf &= ~1 << 8;
+  if (mode) {
+    // single shot
+    conf |= 1 << 8;
+  }
+  write(conf);
+}
+
+void TLA2024::setDR(uint8_t rate) {
+  // bring in conf reg
+  uint16_t conf = read(conf_reg);
+  // set bits 7:5
+  conf |= ~0b111 << 5;
   write(conf);
 }
