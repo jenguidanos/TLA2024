@@ -14,6 +14,16 @@ union I2C_data {
 } data;
 
 void setup() {
+  Serial.begin(115200);
+  adcInit();
+}
+
+void loop() {
+  Serial.println(adcAnalogRead());
+  delay(20);
+}
+
+void adcInit() {
   // enable external power
   pinMode(SNSR_POWER, OUTPUT);
   digitalWrite(SNSR_POWER, HIGH);
@@ -21,8 +31,8 @@ void setup() {
   pinMode(nI2C_ENABLE, OUTPUT);
   digitalWrite(nI2C_ENABLE, LOW);
   delay(10);
-  Serial.begin(115200);
   Wire.begin();
+  Wire.setClock(100000);
   uint16_t conf = adcRead(conf_reg);
   // set inputs to ADC (P = 0, N = GND)
   conf &= ~0x7000;
@@ -31,11 +41,6 @@ void setup() {
   conf &= ~0x0E00;
   // send new conf
   adcWrite(conf);
-}
-
-void loop() {
-  Serial.println(adcAnalogRead());
-  delay(20);
 }
 
 /*
