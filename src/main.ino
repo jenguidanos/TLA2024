@@ -19,7 +19,7 @@ void setup() {
   adc.setFSR(60);
   adc.setMux(4);
   adc.setDR(1);
-  adc.setMode(false);
+  adc.setMode(CONT);
 }
 
 void loop() {
@@ -31,5 +31,10 @@ void loop() {
   // delay(12);
   float val = adc.analogRead();
   Serial.println(val);
-  // delay();
+  // Serial.print("\t");
+  // Serial.print(-200);
+  // Serial.print("\t");
+  // Serial.println(400);
+
+  // delay(1);
 }

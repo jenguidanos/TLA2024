@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 #pragma once
+#define SINGLE true
+#define CONT false
 class TLA2024 {
  public:
   TLA2024();
@@ -60,6 +62,7 @@ class TLA2024 {
   // this is default conf.
   uint16_t init_conf = 0x8583;
   uint16_t saved_conf = 0x8583;
+  bool mode = SINGLE;
 
   union I2C_data {
     uint8_t packet[2];
@@ -141,14 +144,17 @@ void TLA2024::restore(void) {
 }
 
 float TLA2024::analogRead() {
-  // write 1 to OS bit to start conv
-  uint16_t current_conf = read(conf_reg);
-  current_conf |= 0x8000;
-  write(current_conf);
-  // OS bit will be 0 until conv is done.
-  do {
-    delay(5);
-  } while ((read(conf_reg) & 0x8000) == 0);
+  // this only needs to run when in single shot.
+  if (mode) {
+    // write 1 to OS bit to start conv
+    uint16_t current_conf = read(conf_reg);
+    current_conf |= 0x8000;
+    write(current_conf);
+    // OS bit will be 0 until conv is done.
+    do {
+      delay(5);
+    } while ((read(conf_reg) & 0x8000) == 0);
+  }
 
   // get data from conv_reg
   uint16_t in_data = read(conv_reg);
@@ -245,12 +251,13 @@ void TLA2024::setMux(uint8_t option) {
 
 void TLA2024::setMode(bool mode) {
   // bring in conf reg
+  TLA2024::mode = mode;
   uint16_t conf = read(conf_reg);
   // clear MODE bit (8) (continous conv)
-  conf &= ~1 << 8;
+  conf &= ~(1 << 8);
   if (mode) {
     // single shot
-    conf |= 1 << 8;
+    conf |= (1 << 8);
   }
   write(conf);
 }
@@ -259,6 +266,6 @@ void TLA2024::setDR(uint8_t rate) {
   // bring in conf reg
   uint16_t conf = read(conf_reg);
   // set bits 7:5
-  conf |= ~0b111 << 5;
+  conf |= 0b111 << 5;
   write(conf);
 }
